@@ -1,6 +1,7 @@
 import ZlemaPvtMamaFama_MarcoVersion as ZPMF
 import pandas as pd
 import numpy as np
+import openpyxl
 import os
 
 def main():
@@ -15,6 +16,6 @@ def main():
     inputData = inputData.drop(inputData[inputData['Total Score'] < int(min_total_score)].index)
     for i in range(len(inputData)):
         output = ZPMF.main(inputData.loc[inputData.index[i], 'Stock'])
-        output.to_excel(market + ".xlsx", sheet_name = inputData.loc[inputData.index[i], 'Stock'])
+        output.to_excel(inputData.loc[inputData.index[i], 'Stock'])
 
 main()
