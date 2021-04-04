@@ -30,7 +30,6 @@ def main(sysmbol):
             result.loc[result.index[i], 'BuySell'] = "Buy"
         elif(result.loc[result.index[i], 'BuySellCount'] <= -2):
             result.loc[result.index[i], 'BuySell'] = "Sell"
-    result.to_csv("output.csv")
     return result['BuySell']
 
 def getStockPrice(stock):
