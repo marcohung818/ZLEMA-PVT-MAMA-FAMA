@@ -11,8 +11,8 @@ def main():
     inputData = pd.read_csv(stockList, usecols=[0,1,3,5,7])
     print("The Point Distribution")
     print(inputData['Total Score'].value_counts().sort_index())
-    inputData = inputData.drop(inputData[inputData['Total Score'] < min_total_score].index)
     min_total_score = input("Enter the minimum score for requirement: ")
+    inputData = inputData.drop(inputData[inputData['Total Score'] < int(min_total_score)].index)
     for i in range(len(inputData)):
         output = ZPMF.main(inputData.loc[inputData.index[i], 'Stock'])
         output.to_excel(market + ".xlsx", sheet_name = inputData.loc[inputData.index[i], 'Stock'])
