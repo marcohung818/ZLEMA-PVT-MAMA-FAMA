@@ -15,7 +15,8 @@ def main():
     min_total_score = input("Enter the minimum score for requirement: ")
     inputData = inputData.drop(inputData[inputData['Total Score'] < int(min_total_score)].index)
     for i in range(len(inputData)):
+        print("Working on " + inputData.loc[inputData.index[i], 'Stock'])
         output = ZPMF.main(inputData.loc[inputData.index[i], 'Stock'])
-        output.to_excel(inputData.loc[inputData.index[i], 'Stock'])
+        output.to_csv(inputData.loc[inputData.index[i], 'Stock'] + ".csv")
 
 main()

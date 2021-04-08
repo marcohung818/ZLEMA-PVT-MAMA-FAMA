@@ -3,13 +3,43 @@ import pandas as pd
 import numpy as np
 import math
 
-def main(sysmbol):
+def main(sysmbol, zlema_period, pvt_period):
     #sysmbol = input("Input Sysmbol: ")
     stockHistory = getStockPrice(sysmbol)
     result = stockHistory.copy()
-    result['Zlema'] = zlema(stockHistory)
+    result['Zlema'] = zlema(stockHistory, zlema_period)
     #Zlema = pd.concat([stockHistory, Zlema], axis=1)
-    result['PVT'] = pvt(stockHistory)
+    result['PVT'] = pvt(stockHistory, pvt_period)
+    #PVT = pd.concat([stockHistory, PVT], axis=1)
+    #result['MAMAFAMA'] = mafa(stockHistory)
+    result[['BuySellCount', 'BuySell']] = 0
+    for i in range(0, len(result)):
+        if(result.loc[result.index[i], 'Zlema'] == True):
+            result.loc[result.index[i], 'BuySellCount'] += 1
+        elif(result.loc[result.index[i], 'Zlema'] == False):
+            result.loc[result.index[i], 'BuySellCount'] -= 1
+        if(result.loc[result.index[i], 'PVT'] == True):
+            result.loc[result.index[i], 'BuySellCount'] += 1
+        elif(result.loc[result.index[i], 'PVT'] == False):
+            result.loc[result.index[i], 'BuySellCount'] -= 1
+        if(result.loc[result.index[i], 'MAMAFAMA'] == True):
+            result.loc[result.index[i], 'BuySellCount'] += 1
+        elif(result.loc[result.index[i], 'MAMAFAMA'] == False):
+            result.loc[result.index[i], 'BuySellCount'] -= 1
+        if(result.loc[result.index[i], 'BuySellCount'] >= 2):
+            result.loc[result.index[i], 'BuySell'] = "Buy"
+        elif(result.loc[result.index[i], 'BuySellCount'] <= -2):
+            result.loc[result.index[i], 'BuySell'] = "Sell"
+    return result[['Zlema', 'PVT', 'MAMAFAMA', 'BuySell']]
+    #return result[['Zlema', 'PVT', 'BuySell']]
+
+def main_for_backtest(sysmbol, zlema_period, pvt_period):
+    #sysmbol = input("Input Sysmbol: ")
+    stockHistory = getStockPrice(sysmbol)
+    result = stockHistory.copy()
+    result['Zlema'] = zlema(stockHistory, zlema_period)
+    #Zlema = pd.concat([stockHistory, Zlema], axis=1)
+    result['PVT'] = pvt(stockHistory, pvt_period)
     #PVT = pd.concat([stockHistory, PVT], axis=1)
     result['MAMAFAMA'] = mafa(stockHistory)
     result[['BuySellCount', 'BuySell']] = 0
@@ -30,15 +60,15 @@ def main(sysmbol):
             result.loc[result.index[i], 'BuySell'] = "Buy"
         elif(result.loc[result.index[i], 'BuySellCount'] <= -2):
             result.loc[result.index[i], 'BuySell'] = "Sell"
-    return result['BuySell']
+    return result[['Close', 'Zlema', 'PVT', 'MAMAFAMA', 'BuySell']]
 
 def getStockPrice(stock):
     stockPriceData = yf.download(stock, period="max", interval="1d")
     stockPriceData = stockPriceData.round(4)
     return stockPriceData
 
-def zlema(data):#Using Close to calculate
-    period = 14
+def zlema(data, zlema_period):#Using Close to calculate
+    period = zlema_period
     lag = round((period - 1) / 2)
     localData = data.copy()
     localData['Shift'] = localData['Close'] + (localData['Close'] - localData['Close'].shift(lag))
@@ -46,8 +76,8 @@ def zlema(data):#Using Close to calculate
     localData['ZLEMABuySell'] = np.where(localData['ZLEMA'] >= localData['ZLEMA'].shift(1), True, False)
     return localData['ZLEMABuySell']
 
-def pvt(data):#Using Volume to calculate
-    signalPeriod = 21
+def pvt(data, pvt_period):#Using Volume to calculate
+    signalPeriod = pvt_period
     localData = data.copy()
     localData['CloseShift1'] = localData["Close"].shift(1)
     localData['Pre_PVT'] = ((localData['Close'] - localData['CloseShift1']) / localData['CloseShift1']) * localData['Volume']
@@ -65,7 +95,6 @@ def mafa(data):
     length = 20
     fast_length = 10
     slow_length = 20
-    crypto_boolean = False
     normalize = 300
     er_Mole = localData['Close'] - localData['Close'].shift(length)
     er_Mole = er_Mole.abs()
@@ -107,14 +136,6 @@ def mafa(data):
     localData.loc[localData['MACDPositionSignal'] == 0, 'MACDBuySell'] = None
     localData.loc[localData['MACDPositionSignal'] == -1, 'MACDBuySell'] = False
     localData['MAMAFAMABuySell'] = localData['HISTBuySell']
-    '''
-    for i in range(len(localData)):
-        if(localData.loc[localData.index[i], 'HISTBuySell'] == True or localData.loc[localData.index[i], 'MACDBuySell'] == True):
-            localData.loc[localData.index[i], 'MAMAFAMABuySell'] == True
-        elif(localData.loc[localData.index[i], 'HISTBuySell'] == False or localData.loc[localData.index[i], 'MACDBuySell'] == False):
-            localData.loc[localData.index[i], 'MAMAFAMABuySell'] == False
-    '''
-    localData.to_csv("test.csv")
     return localData['MAMAFAMABuySell']
 
 def mafa_nz(data, column, current, shift):
